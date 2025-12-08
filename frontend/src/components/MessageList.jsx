@@ -3,6 +3,7 @@ import { useChatStore } from '../store/useChatStore';
 import { useAuthStore } from '../store/useAuthStore';
 import { Avatar } from '@mui/material';
 import DoneAllIcon from '@mui/icons-material/DoneAll';
+import AudioMessage from './AudioMessage';
 
 const MessageList = () => {
   const { messages, selectedUser, isMessagesLoading, isTyping } = useChatStore();
@@ -74,6 +75,13 @@ const MessageList = () => {
                   className="rounded-lg mb-2 max-w-full"
                 />
               )}
+              
+              {message.audio && (
+                <div className="mb-2">
+                  <AudioMessage src={message.audio} isMyMessage={isMyMessage} />
+                </div>
+              )}
+
               {message.text && <p className="break-words">{message.text}</p>}
               
               <div className={`flex items-center gap-1 mt-1 text-xs ${

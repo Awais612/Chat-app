@@ -8,11 +8,13 @@ import CloseIcon from '@mui/icons-material/Close';
 import EmojiPicker from 'emoji-picker-react';
 import toast from 'react-hot-toast';
 import { useChatStore } from '../store/useChatStore';
+import VoiceRecorder from './VoiceRecorder';
 
 const MessageInput = () => {
   const [text, setText] = useState('');
   const [showEmojiPicker, setShowEmojiPicker] = useState(false);
   const [imagePreview, setImagePreview] = useState(null);
+  const [isRecording, setIsRecording] = useState(false);
   const { sendMessage, selectedUser, sendTypingStatus } = useChatStore();
   const typingTimeoutRef = useRef(null);
   const isTypingRef = useRef(false);
@@ -142,6 +144,11 @@ const MessageInput = () => {
     }
   };
 
+  const handleSendAudio = async (audioData) => {
+    if (!selectedUser) return;
+    await sendMessage({ audio: audioData });
+  };
+
   const handleKeyPress = (e) => {
     if (e.key === 'Enter' && !e.shiftKey) {
       e.preventDefault();
@@ -199,7 +206,7 @@ const MessageInput = () => {
         </Box>
       )}
 
-      <form onSubmit={handleSubmit} className="flex items-center gap-2">
+      <div className="flex items-center gap-2">
         <input
           ref={fileInputRef}
           type="file"
@@ -211,7 +218,7 @@ const MessageInput = () => {
         <IconButton
           onClick={() => fileInputRef.current?.click()}
           color="primary"
-          disabled={!selectedUser}
+          disabled={!selectedUser || isRecording}
         >
           <ImageIcon />
         </IconButton>
@@ -219,55 +226,65 @@ const MessageInput = () => {
         <IconButton
           onClick={() => setShowEmojiPicker(!showEmojiPicker)}
           color="primary"
-          disabled={!selectedUser}
+          disabled={!selectedUser || isRecording}
         >
           <EmojiEmotionsIcon />
         </IconButton>
 
-        <TextField
-          fullWidth
-          multiline
-          maxRows={4}
-          value={text}
-          onChange={handleTextChange}
-          onKeyPress={handleKeyPress}
-          placeholder="Type a message..."
-          variant="outlined"
-          disabled={!selectedUser}
-          sx={{
-            '& .MuiOutlinedInput-root': {
-              borderRadius: '24px',
-              '&:hover fieldset': {
-                borderColor: '#0284c7',
+        <form onSubmit={handleSubmit} className="flex-1 flex gap-2">
+          <TextField
+            fullWidth
+            multiline
+            maxRows={4}
+            value={text}
+            onChange={handleTextChange}
+            onKeyPress={handleKeyPress}
+            placeholder="Type a message..."
+            variant="outlined"
+            disabled={!selectedUser || isRecording}
+            sx={{
+              '& .MuiOutlinedInput-root': {
+                borderRadius: '24px',
+                '&:hover fieldset': {
+                  borderColor: '#0284c7',
+                },
+                '&.Mui-focused fieldset': {
+                  borderColor: '#0284c7',
+                },
               },
-              '&.Mui-focused fieldset': {
-                borderColor: '#0284c7',
-              },
-            },
-          }}
-        />
-        
-        <IconButton
-          type="submit"
-          color="primary"
-          disabled={(!text.trim() && !imagePreview) || !selectedUser}
-          sx={{
-            backgroundColor: '#0284c7',
-            color: 'white',
-            width: 48,
-            height: 48,
-            '&:hover': {
-              backgroundColor: '#0369a1',
-            },
-            '&:disabled': {
-              backgroundColor: '#e5e7eb',
-              color: '#9ca3af',
-            },
-          }}
-        >
-          <SendIcon />
-        </IconButton>
-      </form>
+            }}
+          />
+          
+          {text.trim() || imagePreview ? (
+            <IconButton
+              type="submit"
+              color="primary"
+              disabled={(!text.trim() && !imagePreview) || !selectedUser}
+              sx={{
+                backgroundColor: '#0284c7',
+                color: 'white',
+                width: 48,
+                height: 48,
+                '&:hover': {
+                  backgroundColor: '#0369a1',
+                },
+                '&:disabled': {
+                  backgroundColor: '#e5e7eb',
+                  color: '#9ca3af',
+                },
+              }}
+            >
+              <SendIcon />
+            </IconButton>
+          ) : (
+            <VoiceRecorder
+              onSendAudio={handleSendAudio}
+              disabled={!selectedUser}
+              onCancel={() => setIsRecording(false)}
+            />
+          )}
+        </form>
+      </div>
     </div>
   );
 };
