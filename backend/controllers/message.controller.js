@@ -68,9 +68,24 @@ export const getMessages = async (req, res) => {
 
 export const sendMessage = async (req, res) => {
   try {
-    const { text, image } = req.body;
+    const { text, image, audio } = req.body;
     const { id: receiverId } = req.params;
     const senderId = req.user._id;
+
+    // Validate that at least one content type is provided
+    if (!text && !image && !audio) {
+      return res.status(400).json({ message: "Message must contain text, image, or audio" });
+    }
+
+    // Audio file size validation (5MB limit)
+    if (audio) {
+      const audioSizeInBytes = Math.ceil((audio.length * 3) / 4);
+      const MAX_AUDIO_SIZE = 5 * 1024 * 1024; // 5MB
+      
+      if (audioSizeInBytes > MAX_AUDIO_SIZE) {
+        return res.status(400).json({ message: "Audio file size must be less than 5MB" });
+      }
+    }
 
     let imageData;
     if (image) {
@@ -82,6 +97,7 @@ export const sendMessage = async (req, res) => {
       receiverId,
       text,
       image: imageData,
+      audio,
     });
 
     await newMessage.save();
